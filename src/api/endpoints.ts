@@ -169,6 +169,12 @@ export const categoriesMutApi = {
   delete: (id: number) => api.delete(`/categories/${id}`),
 }
 
+// ====== Audit trail ======
+export const auditApi = {
+  list: (params?: any) => api.get('/audit/logs', { params }),
+  stats: (params?: any) => api.get('/audit/stats', { params }),
+}
+
 // ====== Codification (étendu) ======
 export const planCodifApi = {
   list: () => api.get('/codification/plans'),

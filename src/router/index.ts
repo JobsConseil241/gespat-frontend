@@ -48,6 +48,7 @@ const routes: RouteRecordRaw[] = [
 
       // Administration
       { path: 'admin/users', name: 'admin-users', component: () => import('@/pages/UsersListPage.vue') },
+      { path: 'admin/audit', name: 'admin-audit', component: () => import('@/pages/AuditLogsPage.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

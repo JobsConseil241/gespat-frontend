@@ -1,26 +1,64 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { dashboardApi } from '@/api/endpoints'
 import type { KpiData } from '@/types'
-import { CubeIcon, CheckCircleIcon, ArchiveBoxXMarkIcon, BanknotesIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
+import {
+  CubeIcon, CheckCircleIcon, ArchiveBoxXMarkIcon, BanknotesIcon, ClipboardDocumentListIcon,
+} from '@heroicons/vue/24/outline'
+import ChartCard from '@/components/ChartCard.vue'
 
 const kpi = ref<KpiData | null>(null)
 const parCategorie = ref<any[]>([])
 const parSite = ref<any[]>([])
+const parStatut = ref<any[]>([])
 const loading = ref(true)
 
 const fmt = (v: number | string) => new Intl.NumberFormat('fr-FR').format(typeof v === 'string' ? parseFloat(v) : v)
 
+const palette = ['#0284c7', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16']
+
+const categorieChart = computed(() => ({
+  labels: parCategorie.value.map((c) => `${c.code} — ${c.libelle}`),
+  datasets: [{ data: parCategorie.value.map((c) => Number(c.nombre)), backgroundColor: palette }],
+}))
+
+const siteChart = computed(() => ({
+  labels: parSite.value.map((s) => s.code),
+  datasets: [{
+    label: 'Nombre de biens',
+    data: parSite.value.map((s) => Number(s.nombre)),
+    backgroundColor: '#0284c7',
+  }, {
+    label: 'Valeur brute (millions XAF)',
+    data: parSite.value.map((s) => Number(s.valeur_brute) / 1_000_000),
+    backgroundColor: '#10b981',
+  }],
+}))
+
+const statutChart = computed(() => ({
+  labels: parStatut.value.map((s) => s.statut),
+  datasets: [{
+    data: parStatut.value.map((s) => Number(s.nombre)),
+    backgroundColor: parStatut.value.map((s) => ({
+      actif: '#10b981', en_maintenance: '#f59e0b', en_transfert: '#0284c7',
+      reforme: '#94a3b8', cede: '#94a3b8', perdu: '#ef4444',
+      vole: '#ef4444', detruit: '#ef4444',
+    } as Record<string, string>)[s.statut] || '#6b7280'),
+  }],
+}))
+
 onMounted(async () => {
   try {
-    const [k, c, s] = await Promise.all([
+    const [k, c, s, st] = await Promise.all([
       dashboardApi.kpi(),
       dashboardApi.parCategorie(),
       dashboardApi.parSite(),
+      dashboardApi.parStatut(),
     ])
     kpi.value = k.data.data
-    parCategorie.value = c.data.data
-    parSite.value = s.data.data
+    parCategorie.value = c.data.data as any
+    parSite.value = s.data.data as any
+    parStatut.value = st.data.data as any
   } finally {
     loading.value = false
   }
@@ -109,43 +147,59 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Répartitions -->
+      <!-- Graphiques -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="card p-5">
+          <h2 class="text-lg font-semibold mb-4">Répartition par catégorie</h2>
+          <ChartCard v-if="parCategorie.length"
+                     type="doughnut" :labels="categorieChart.labels"
+                     :datasets="categorieChart.datasets" />
+          <p v-else class="text-sm text-slate-400 text-center py-8">Aucune donnée</p>
+        </div>
+
+        <div class="card p-5">
+          <h2 class="text-lg font-semibold mb-4">Répartition par statut</h2>
+          <ChartCard v-if="parStatut.length"
+                     type="doughnut" :labels="statutChart.labels"
+                     :datasets="statutChart.datasets" />
+          <p v-else class="text-sm text-slate-400 text-center py-8">Aucune donnée</p>
+        </div>
+      </div>
+
+      <div class="card p-5 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Patrimoine par site (nombre + valorisation)</h2>
+        <ChartCard v-if="parSite.length"
+                   type="bar" :labels="siteChart.labels"
+                   :datasets="siteChart.datasets" />
+        <p v-else class="text-sm text-slate-400 text-center py-8">Aucune donnée</p>
+      </div>
+
+      <!-- Tableaux détaillés -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="card p-5">
-          <h2 class="text-lg font-semibold mb-4">Patrimoine par catégorie</h2>
+          <h2 class="text-lg font-semibold mb-4">Détail par catégorie</h2>
           <table class="table">
-            <thead><tr><th>Catégorie</th><th class="text-right">Nombre</th><th class="text-right">Valeur brute</th></tr></thead>
+            <thead><tr><th>Code</th><th>Catégorie</th><th class="text-right">Nb</th><th class="text-right">Valeur</th></tr></thead>
             <tbody>
               <tr v-for="row in parCategorie" :key="row.code">
-                <td>
-                  <span class="badge-info mr-2">{{ row.code }}</span>
-                  {{ row.libelle }}
-                </td>
-                <td class="text-right">{{ fmt(row.nombre) }}</td>
-                <td class="text-right">{{ fmt(row.valeur_brute) }}</td>
-              </tr>
-              <tr v-if="parCategorie.length === 0">
-                <td colspan="3" class="text-center text-slate-400">Aucune donnée</td>
+                <td><span class="badge-info">{{ row.code }}</span></td>
+                <td>{{ row.libelle }}</td>
+                <td class="text-right tabular-nums">{{ fmt(row.nombre) }}</td>
+                <td class="text-right tabular-nums">{{ fmt(row.valeur_brute) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-
         <div class="card p-5">
-          <h2 class="text-lg font-semibold mb-4">Patrimoine par site</h2>
+          <h2 class="text-lg font-semibold mb-4">Détail par site</h2>
           <table class="table">
-            <thead><tr><th>Site</th><th class="text-right">Nombre</th><th class="text-right">Valeur brute</th></tr></thead>
+            <thead><tr><th>Code</th><th>Site</th><th class="text-right">Nb</th><th class="text-right">Valeur</th></tr></thead>
             <tbody>
               <tr v-for="row in parSite" :key="row.code">
-                <td>
-                  <span class="badge-gray mr-2">{{ row.code }}</span>
-                  {{ row.libelle }}
-                </td>
-                <td class="text-right">{{ fmt(row.nombre) }}</td>
-                <td class="text-right">{{ fmt(row.valeur_brute) }}</td>
-              </tr>
-              <tr v-if="parSite.length === 0">
-                <td colspan="3" class="text-center text-slate-400">Aucune donnée</td>
+                <td><span class="badge-gray">{{ row.code }}</span></td>
+                <td>{{ row.libelle }}</td>
+                <td class="text-right tabular-nums">{{ fmt(row.nombre) }}</td>
+                <td class="text-right tabular-nums">{{ fmt(row.valeur_brute) }}</td>
               </tr>
             </tbody>
           </table>

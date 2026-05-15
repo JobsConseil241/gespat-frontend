@@ -8,7 +8,7 @@ import {
   MapPinIcon, UserGroupIcon, TruckIcon, ArrowsRightLeftIcon,
   ArchiveBoxXMarkIcon, WrenchScrewdriverIcon, CalculatorIcon,
   QrCodeIcon, BookOpenIcon, BanknotesIcon, DocumentChartBarIcon,
-  UsersIcon,
+  UsersIcon, ShieldCheckIcon,
 } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
@@ -68,6 +68,7 @@ const groups: NavGroup[] = [
     title: 'Administration',
     items: [
       { name: 'Utilisateurs', to: '/admin/users', icon: UsersIcon, perm: 'users.view' },
+      { name: 'Audit trail', to: '/admin/audit', icon: ShieldCheckIcon, perm: 'audit.view' },
     ],
   },
 ]
