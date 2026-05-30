@@ -43,13 +43,13 @@ async function submit() {
 
       <form @submit.prevent="submit" class="space-y-4">
         <div>
-          <label class="label">Email</label>
-          <input v-model="email" type="email" required class="input" autocomplete="email">
+          <label for="login-email" class="label">Email</label>
+          <input id="login-email" v-model="email" type="email" required class="input" autocomplete="email">
         </div>
 
         <div>
-          <label class="label">Mot de passe</label>
-          <input v-model="password" type="password" required class="input" autocomplete="current-password">
+          <label for="login-password" class="label">Mot de passe</label>
+          <input id="login-password" v-model="password" type="password" required class="input" autocomplete="current-password">
         </div>
 
         <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
