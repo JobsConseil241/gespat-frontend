@@ -1,0 +1,36 @@
+# Types MIME explicites — Hostinger sert sinon les .js en text/plain,
+# ce que le navigateur refuse pour les <script type="module"> (strict MIME check)
+<IfModule mod_mime.c>
+  AddType text/javascript            .js .mjs
+  AddType text/css                   .css
+  AddType image/svg+xml              .svg
+  AddType application/json           .json
+  AddType application/wasm           .wasm
+  AddType font/woff2                 .woff2
+  AddType font/woff                  .woff
+</IfModule>
+
+# SPA rewrite — toutes les routes Vue Router renvoient vers index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Cache long pour les assets versionnés (hash dans le nom)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|mjs|css|svg|woff2?|png|jpg|jpeg|gif|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
